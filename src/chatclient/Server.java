@@ -12,10 +12,13 @@ public class Server implements Runnable {
 	static Vector clients = new Vector<>(); 
 	private InputStreamReader isr;
 	private BufferedReader reader;
+	private DataOutputStream dos;
 	
 	public Server (int port, Socket socket) throws IOException {
 		 this.isr =  new InputStreamReader(socket.getInputStream());
          this.reader = new BufferedReader(isr);
+         this.dos = new DataOutputStream(socket.getOutputStream()); 
+         
 	}
 	
 	@Override
