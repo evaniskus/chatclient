@@ -3,72 +3,138 @@ import java.io.*;
 import java.util.*;
 
 
-
 import java.net.*; 
   
 
-public class Server implements Runnable {
-	//initialize socket and input stream 
-	static Vector clients = new Vector<>(); 
-	private InputStreamReader isr;
-	private BufferedReader reader;
-	private DataOutputStream dos;
+import java.io.*; 
+import java.util.*; 
+import java.net.*; 
+
+// Server class 
+public class Server 
+{ 
+
+	// Vector to store active clients 
+	static Vector<ClientHandler> ar = new Vector<>(); 
 	
-	public Server (int port, Socket socket) throws IOException {
-		 this.isr =  new InputStreamReader(socket.getInputStream());
-         this.reader = new BufferedReader(isr);
-         this.dos = new DataOutputStream(socket.getOutputStream()); 
-         
-	}
+	// counter for clients 
+	static int i = 0; 
+
+	public static void main(String[] args) throws IOException 
+	{ 
+		// server is listening on port 1234 
+		ServerSocket ss = new ServerSocket(8080); 
+		
+		Socket s; 
+		
+		// running infinite loop for getting 
+		// client request 
+		while (true) 
+		{ 
+			// Accept the incoming request 
+			s = ss.accept(); 
+
+			System.out.println("New client request received : " + s); 
+			
+			// obtain input and output streams 
+			DataInputStream dis = new DataInputStream(s.getInputStream()); 
+			DataOutputStream dos = new DataOutputStream(s.getOutputStream()); 
+			
+			System.out.println("Creating a new handler for this client..."); 
+
+			// Create a new handler object for handling this request. 
+			ClientHandler mtch = new ClientHandler(s,"client " + i, dis, dos); 
+
+			// Create a new Thread with this object. 
+			Thread t = new Thread(mtch); 
+			
+			System.out.println("Adding this client to active client list"); 
+
+			// add this client to active clients list 
+			ar.add(mtch); 
+
+			// start the thread. 
+			t.start(); 
+
+			// increment i for new client. 
+			// i is used for naming only, and can be replaced 
+			// by any naming scheme 
+			i++; 
+
+		} 
+	} 
+} 
+
+// ClientHandler class 
+class ClientHandler implements Runnable 
+{ 
+	Scanner scn = new Scanner(System.in); 
+	private String name; 
+	final DataInputStream dis; 
+	final DataOutputStream dos; 
+	Socket s; 
+	boolean isloggedin; 
 	
+	// constructor 
+	public ClientHandler(Socket s, String name, 
+							DataInputStream dis, DataOutputStream dos) { 
+		this.dis = dis; 
+		this.dos = dos; 
+		this.name = name; 
+		this.s = s; 
+		this.isloggedin=true; 
+	} 
+
 	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		// This is for after the thread has been created and handles the responses to the client
-		// i.e. welcome message. log out, send and receive msgs
-		for(int i = 0; i < 5; i++) {
-			System.out.println("yeet");
-		}
-		
-	}
+	public void run() { 
 
-	
+		String received; 
+		while (true) 
+		{ 
+			try
+			{ 
+				// receive the string 
+				received = dis.readUTF(); 
+				
+				System.out.println(received); 
+				
+				if(received.equals("logout")){ 
+					this.isloggedin=false; 
+					this.s.close(); 
+					break; 
+				} 
+				
+				// break the string into message and recipient part 
+				StringTokenizer st = new StringTokenizer(received, "#"); 
+				String MsgToSend = st.nextToken(); 
+				String recipient = st.nextToken(); 
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		// the main acts as the always on engine of server
-		// keeps looping and accepting new client connections
-		// then creates a threaded server to handle client
-		
-		
-		int port = 8080;
-		try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Server is listening on port " + port);
- 
-            while (true) {
-                Socket socket = serverSocket.accept();
- 
-                System.out.println("New client connected");
-                
-                // client connected, parse headers
-               
-                Server server = new Server(port, socket);
- 
-                //create new threads 
-                Thread t = new Thread(server);
-              
-                t.start();
-               
-
-            }
-        } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-
-
-
-	
-}
+				// search for the recipient in the connected devices list. 
+				// ar is the vector storing client of active users 
+				for (ClientHandler mc : Server.ar) 
+				{ 
+					// if the recipient is found, write on its 
+					// output stream 
+					if (mc.name.equals(recipient) && mc.isloggedin==true) 
+					{ 
+						mc.dos.writeUTF(this.name+" : "+MsgToSend); 
+						break; 
+					} 
+				} 
+			} catch (IOException e) { 
+				
+				e.printStackTrace(); 
+			} 
+			
+		} 
+		try
+		{ 
+			// closing resources 
+			this.dis.close(); 
+			this.dos.close(); 
+			
+		}catch(IOException e){ 
+			e.printStackTrace(); 
+		} 
+	} 
+} 
