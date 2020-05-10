@@ -1,143 +1,140 @@
 package chatclient;
 import java.io.*; 
 import java.util.*;
-
-
-import java.net.*; 
-  
-
-import java.io.*; 
-import java.util.*; 
 import java.net.*; 
 
-// Server class 
-public class Server 
-{ 
 
-	// Vector to store active clients 
-	static Vector<ClientHandler> ar = new Vector<>(); 
-	
-	// counter for clients 
-	static int i = 0; 
-
-	public static void main(String[] args) throws IOException{ 
-		// server is listening on port 1234 
-		ServerSocket serversocket = new ServerSocket(8080); 
-		
-		Socket socket; 
-		
-		// running infinite loop for getting 
-		// client request 
-		while (true) { 
-			// Accept the incoming request 
-			socket = serversocket.accept(); 
-
-			System.out.println("New client request received : " + socket); 
-			
-			// obtain input and output streams 
-			DataInputStream dis = new DataInputStream(socket.getInputStream()); 
-			DataOutputStream dos = new DataOutputStream(socket.getOutputStream()); 
-			
-			System.out.println("Creating a new handler for this client..."); 
-			String username = dis.readUTF(); 
-			
-			// Create a new handler object for handling this request. 
-			ClientHandler mtch = new ClientHandler(socket,username, dis, dos); 
-			dos.writeUTF("Welcome, " + username);
-			
-
-			// Create a new Thread with this object. 
-			Thread t = new Thread(mtch); 
-			
-			System.out.println("Adding this client to active client list"); 
-
-			// add this client to active clients list 
-			ar.add(mtch); 
-
-			
-			for(ClientHandler mc: Server.ar){
-				if (mc.isloggedin == true){ 
-						mc.dos.writeUTF("A new client has joined the chat."); 
-					} 
-			}
-			// start the thread. 
-			t.start(); 
-
-			// increment i for new client. 
-			// i is used for naming only, and can be replaced 
-			// by any naming scheme 
-			i++; 
-
-		} 
-	} 
-} 
-
-// ClientHandler class 
-class ClientHandler implements Runnable 
-{ 
-	Scanner scn = new Scanner(System.in); 
-	private String name; 
-	final DataInputStream dis; 
+public class Server implements Runnable{ 
+	// typical imports, get cmds from cmdline, create input/output streams, sockets
+	Scanner scan = new Scanner(System.in); 
+	private String userName; 
 	final DataOutputStream dos; 
-	Socket s; 
-	boolean isloggedin; 
+	final DataInputStream dis; 
+	Socket socket; 
+	boolean loggedin; 
 	
-	// constructor 
-	public ClientHandler(Socket s, String name, 
-							DataInputStream dis, DataOutputStream dos) { 
-		this.dis = dis; 
+	// client stored in vector b/c vector is synchronized
+	// unlike Arraylists, which we where thinking of using at first
+	static Vector<Server> clients = new Vector<>(); 
+	
+	// counter connected clients to keep track of clients
+	static int connectedClients = 0; 
+	
+	
+	// default constructor to do fun OOP things
+	public Server(Socket s, String name, DataInputStream dis, DataOutputStream dos) { 
 		this.dos = dos; 
-		this.name = name; 
-		this.s = s; 
-		this.isloggedin=true; 
-	} 
-
+		this.dis = dis; 
+		this.userName = name; 
+		this.socket = s; 
+		this.loggedin=true; 
+	}
+	
+	
+	//  multi-threaded part, once a thread has been started it'll do this
 	@Override
-	public void run() { 
-
+	public void run() {
+		// TODO Auto-generated method stub
 		String received; 
-		while (true) 
-		{ 
-			try
-			{ 
-				// receive the string 
+		while (true){ 
+			try{ 
+				// get received msg
 				received = dis.readUTF(); 
 				
-//				System.out.println(received); 
-				
+
+				// check to see if client send LOGOUT msg, i.e. client requests to leave
 				if(received.equals("LOGOUT")){ 
-					
-					for(ClientHandler mc: Server.ar){
-						if (mc.isloggedin == true){ 
-								mc.dos.writeUTF(this.name + " has left the chat"); 
+					connectedClients--;
+					for(Server currClient: Server.clients){
+						if (currClient.loggedin == true){ 
+								currClient.dos.writeUTF(this.userName + " has left the chat"); 
+								currClient.dos.writeUTF("There are currently " + (connectedClients) + " users online");
 							} 
 					}
 					dos.writeUTF("QUIT-OK");
-					this.isloggedin=false; 
-					this.s.close(); 
+					this.loggedin=false; 
+					this.socket.close();
 					break; 
 				} 
-				for(ClientHandler mc: Server.ar){
-					if (mc.isloggedin == true){ 
-							mc.dos.writeUTF(this.name+" : "+received); 
+				
+				// otherwise, send received msg to all other connected clients
+				for(Server currClient: Server.clients){
+					if (currClient.loggedin == true){ 
+							currClient.dos.writeUTF(this.userName+" : "+received); 
 						} 
-				}
-				
-
+				}	
 			} catch (IOException e) { 
-				
 				e.printStackTrace(); 
 			} 
-			
 		} 
-		try
-		{ 
-			// closing resources 
+		try{ 
 			this.dis.close(); 
-			this.dos.close(); 
-			
+			this.dos.close(); 		
 		}catch(IOException e){ 
 			e.printStackTrace(); 
 		} 
 	} 
+	
+	
+	public static void main(String[] args) throws IOException{ 
+		ServerSocket serversocket = new ServerSocket(8080); 	
+		Socket socket; 
+		/*
+		 * Loop looks for and accepts any client socket requests
+		 * Creates data input/output streams
+		 * Read initial msg from client whhich contains client's username 
+		 * Creates a new server object to handle the client's requests  and  msgs
+		 * Adds client to vector list
+		 * Announces that a new client has joined the room
+		 * Starts a new thread using the newly created server object
+		 * 
+		 */
+		
+		
+		while (true) { 
+			// Accept the incoming request 
+			socket = serversocket.accept(); 
+			System.out.println("New client connected @ " + socket); 
+			
+			// create data input/output streams
+			DataInputStream dis = new DataInputStream(socket.getInputStream()); 
+			DataOutputStream dos = new DataOutputStream(socket.getOutputStream()); 
+			
+			
+			//  initial msg is username, take that and send back an ACK msg
+			String username = dis.readUTF(); 
+			dos.writeUTF("LOGIN-OK");
+			dos.writeUTF("Welcome, " + username);
+			
+			
+			// create new server object to handle connection
+			// then create a new thread for that server object
+			Server server = new Server(socket,username, dis, dos); 
+			Thread t = new Thread(server); 
+			
+
+
+			clients.add(server); 
+
+			// announce that new client has connected
+			for(Server currClient: Server.clients){
+				if (currClient.loggedin == true){ 
+						currClient.dos.writeUTF(username + " has joined the chat."); 
+						currClient.dos.writeUTF("There are currently " + (connectedClients+1) + " users online"); 
+					} 
+			}
+
+			
+			
+			t.start(); 
+
+
+			connectedClients++; 
+			
+
+		} 
+	}
+
+	
 } 
+
