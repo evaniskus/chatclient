@@ -41,9 +41,12 @@ public class Server
 			DataOutputStream dos = new DataOutputStream(s.getOutputStream()); 
 			
 			System.out.println("Creating a new handler for this client..."); 
-
+			String username = dis.readUTF(); 
+			
 			// Create a new handler object for handling this request. 
-			ClientHandler mtch = new ClientHandler(s,"client " + i, dis, dos); 
+			ClientHandler mtch = new ClientHandler(s,username, dis, dos); 
+			dos.writeUTF("Welcome, " + username);
+			
 
 			// Create a new Thread with this object. 
 			Thread t = new Thread(mtch); 
@@ -53,6 +56,12 @@ public class Server
 			// add this client to active clients list 
 			ar.add(mtch); 
 
+			
+			for(ClientHandler mc: Server.ar){
+				if (mc.isloggedin == true){ 
+						mc.dos.writeUTF("A new client has joined the chat."); 
+					} 
+			}
 			// start the thread. 
 			t.start(); 
 
@@ -96,31 +105,28 @@ class ClientHandler implements Runnable
 				// receive the string 
 				received = dis.readUTF(); 
 				
-				System.out.println(received); 
+//				System.out.println(received); 
 				
-				if(received.equals("logout")){ 
+				if(received.equals("LOGOUT")){ 
 					this.isloggedin=false; 
 					this.s.close(); 
+					for(ClientHandler mc: Server.ar){
+						if (mc.isloggedin == true){ 
+								mc.dos.writeUTF(this.name + " has left the chat"); 
+							} 
+					}
 					break; 
 				} 
+//				
 				
-				// break the string into message and recipient part 
-				StringTokenizer st = new StringTokenizer(received, "#"); 
-				String MsgToSend = st.nextToken(); 
-				String recipient = st.nextToken(); 
+				
+				for(ClientHandler mc: Server.ar){
+					if (mc.isloggedin == true){ 
+							mc.dos.writeUTF(this.name+" : "+received); 
+						} 
+				}
+				
 
-				// search for the recipient in the connected devices list. 
-				// ar is the vector storing client of active users 
-				for (ClientHandler mc : Server.ar) 
-				{ 
-					// if the recipient is found, write on its 
-					// output stream 
-					if (mc.name.equals(recipient) && mc.isloggedin==true) 
-					{ 
-						mc.dos.writeUTF(this.name+" : "+MsgToSend); 
-						break; 
-					} 
-				} 
 			} catch (IOException e) { 
 				
 				e.printStackTrace(); 

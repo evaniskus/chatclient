@@ -22,6 +22,18 @@ public class Client{
 		DataInputStream dis = new DataInputStream(socket.getInputStream()); 
 		DataOutputStream dos = new DataOutputStream(socket.getOutputStream()); 
 		
+		
+		
+		
+		
+		System.out.println("Hello, welcome to Biggus Brainus chat. Please enter a user name: ");
+		String username = scan.next();
+		
+		// login process
+		dos.writeUTF(username); 
+		
+		
+		
 		// sendMessage thread 
 		Thread sendMessage = new Thread(new Runnable() 
 		{ 
@@ -31,6 +43,17 @@ public class Client{
 
 					// read the message to deliver. 
 					String msg = scan.nextLine(); 
+					if(msg.equals(".")) {
+						try { 
+							// write on the output stream 
+							dos.writeUTF("LOGOUT"); 
+							System.exit(0);
+						} catch (IOException e) { 
+							e.printStackTrace(); 
+						} 
+					}
+					
+					
 					
 					try { 
 						// write on the output stream 
