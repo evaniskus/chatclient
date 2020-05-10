@@ -20,31 +20,29 @@ public class Server
 	// counter for clients 
 	static int i = 0; 
 
-	public static void main(String[] args) throws IOException 
-	{ 
+	public static void main(String[] args) throws IOException{ 
 		// server is listening on port 1234 
-		ServerSocket ss = new ServerSocket(8080); 
+		ServerSocket serversocket = new ServerSocket(8080); 
 		
-		Socket s; 
+		Socket socket; 
 		
 		// running infinite loop for getting 
 		// client request 
-		while (true) 
-		{ 
+		while (true) { 
 			// Accept the incoming request 
-			s = ss.accept(); 
+			socket = serversocket.accept(); 
 
-			System.out.println("New client request received : " + s); 
+			System.out.println("New client request received : " + socket); 
 			
 			// obtain input and output streams 
-			DataInputStream dis = new DataInputStream(s.getInputStream()); 
-			DataOutputStream dos = new DataOutputStream(s.getOutputStream()); 
+			DataInputStream dis = new DataInputStream(socket.getInputStream()); 
+			DataOutputStream dos = new DataOutputStream(socket.getOutputStream()); 
 			
 			System.out.println("Creating a new handler for this client..."); 
 			String username = dis.readUTF(); 
 			
 			// Create a new handler object for handling this request. 
-			ClientHandler mtch = new ClientHandler(s,username, dis, dos); 
+			ClientHandler mtch = new ClientHandler(socket,username, dis, dos); 
 			dos.writeUTF("Welcome, " + username);
 			
 
@@ -115,23 +113,10 @@ class ClientHandler implements Runnable
 							} 
 					}
 					dos.writeUTF("QUIT-OK");
-					
-					
-					
-					
-					
-					
 					this.isloggedin=false; 
 					this.s.close(); 
-					
-					
-					
-					
 					break; 
 				} 
-//				
-				
-				
 				for(ClientHandler mc: Server.ar){
 					if (mc.isloggedin == true){ 
 							mc.dos.writeUTF(this.name+" : "+received); 
