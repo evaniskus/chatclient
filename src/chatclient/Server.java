@@ -108,13 +108,25 @@ class ClientHandler implements Runnable
 //				System.out.println(received); 
 				
 				if(received.equals("LOGOUT")){ 
-					this.isloggedin=false; 
-					this.s.close(); 
+					
 					for(ClientHandler mc: Server.ar){
 						if (mc.isloggedin == true){ 
 								mc.dos.writeUTF(this.name + " has left the chat"); 
 							} 
 					}
+					dos.writeUTF("QUIT-OK");
+					
+					
+					
+					
+					
+					
+					this.isloggedin=false; 
+					this.s.close(); 
+					
+					
+					
+					
 					break; 
 				} 
 //				

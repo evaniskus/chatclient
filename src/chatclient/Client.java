@@ -48,6 +48,7 @@ public class Client{
 							// write on the output stream 
 							dos.writeUTF("LOGOUT"); 
 							System.exit(0);
+							
 						} catch (IOException e) { 
 							e.printStackTrace(); 
 						} 
@@ -75,6 +76,9 @@ public class Client{
 					try { 
 						// read the message sent to this client 
 						String msg = dis.readUTF(); 
+						if(msg.equals("QUIT-OK")) {
+							System.exit(0);
+						}
 						System.out.println(msg); 
 					} catch (IOException e) { 
 
