@@ -43,7 +43,7 @@ public class Server implements Runnable{
 				
 
 				// check to see if client send LOGOUT msg, i.e. client requests to leave
-				if(received.equals("LOGOUT")){ 
+				if(received.equals(".")){ 
 					connectedClients--;
 					for(Server currClient: Server.clients){
 						if (currClient.loggedin == true){ 
@@ -51,18 +51,20 @@ public class Server implements Runnable{
 								currClient.dos.writeUTF("There are currently " + (connectedClients) + " users online");
 							} 
 					}
-					dos.writeUTF("QUIT-OK");
+					dos.writeUTF(".");
 					this.loggedin=false; 
 					this.socket.close();
 					break; 
 				} 
 				
 				// otherwise, send received msg to all other connected clients
-				for(Server currClient: Server.clients){
-					if (currClient.loggedin == true){ 
-							currClient.dos.writeUTF(this.userName+" : "+received); 
-						} 
-				}	
+				if(!received.equals("")){
+					for(Server currClient: Server.clients){
+						if (currClient.loggedin == true){ 
+								currClient.dos.writeUTF(this.userName+" : "+received); 
+							} 
+					}	
+				}
 			} catch (IOException e) { 
 				e.printStackTrace(); 
 			} 

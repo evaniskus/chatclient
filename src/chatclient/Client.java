@@ -49,13 +49,6 @@ public class Client{
 			public void run() { 
 				while (true) { 
 					String msg = scan.nextLine(); 
-					if(msg.equals(".")) {
-						try { 
-							dos.writeUTF("LOGOUT"); 							
-						} catch (IOException e) { 
-							e.printStackTrace(); 
-						} 
-					}
 					try { 
 						dos.writeUTF(msg); 
 					} catch (IOException e) { 
@@ -79,7 +72,7 @@ public class Client{
 						String msg = dis.readUTF();
 						
 						
-						if(msg.equals("QUIT-OK")) {
+						if(msg.equals(".")) {
 							System.exit(0);
 						}
 						System.out.println(msg); 
